@@ -16,6 +16,8 @@ import { errorHandler } from "./middleware/errorHandler.js";
 const app = express();
 const httpServer = createServer(app);
 
+app.set("trust proxy", 1);
+
 const MemoryStoreSession = MemoryStore(session);
 
 const frontendUrl = process.env.FRONTEND_URL;
