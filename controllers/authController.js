@@ -140,7 +140,7 @@ export async function forgotPassword(req, res) {
   }
 }
 
-export async function verifyResetToken(req, res) {
+export async function verifyResetOTP(req, res) {
   try {
     const { email, otp } = req.body;
     
@@ -172,7 +172,7 @@ export async function resetPassword(req, res) {
       return res.status(400).json({ error: "Password must be at least 6 characters" });
     }
 
-    const account = await storage.getAccountByResetOTP(token);
+    const account = await storage.getAccountByResetOTP(email, otp);
     if (!account) {
       return res.status(400).json({ error: "Invalid or expired reset token" });
     }
