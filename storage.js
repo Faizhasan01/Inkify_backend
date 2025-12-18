@@ -75,6 +75,39 @@ class MemStorage {
     return result !== null;
   }
 
+  async setResetOTP(email, otp, expiry) {
+    if (!getMongoConnectionStatus()) {
+      throw new Error("MongoDB not connected");
+    }
+    return await Account.findOneAndUpdate(
+      { email: email.toLowerCase() },
+      { resetOTP: otp, resetOTPExpiry: expiry, resetEmail: email.toLowerCase() },
+      { new: true }
+    );
+  }
+
+  async getAccountByResetOTP(email, otp) {
+    if (!getMongoConnectionStatus()) {
+      throw new Error("MongoDB not connected");
+    }
+    return await Account.findOne({
+      email: email.toLowerCase(),
+      resetOTP: otp,
+      resetOTPExpiry: { $gt: new Date() }
+    });
+  }
+
+  async clearResetOTP(id) {
+    if (!getMongoConnectionStatus()) {
+      throw new Error("MongoDB not connected");
+    }
+    return await Account.findByIdAndUpdate(
+      id,
+      { resetOTP: null, resetOTPExpiry: null, resetEmail: null },
+      { new: true }
+    );
+  }
+
   async setResetToken(email, token, expiry) {
     if (!getMongoConnectionStatus()) {
       throw new Error("MongoDB not connected");

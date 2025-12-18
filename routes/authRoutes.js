@@ -27,7 +27,7 @@ export function setupAuthRoutes(app) {
   router.post("/login", authController.login);
   router.post("/logout", authController.logout);
   router.post("/forgot-password", authController.forgotPassword);
-  router.get("/verify-reset-token/:token", authController.verifyResetToken);
+  router.post("/verify-reset-otp", authController.verifyResetOTP);
   router.post("/reset-password", authController.resetPassword);
 
   return router;

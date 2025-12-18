@@ -117,25 +117,22 @@ export async function forgotPassword(req, res) {
     if (!account) {
       return res.json({ 
         success: true, 
-        message: "If an account with that email exists, a password reset link has been sent." 
+        message: "If an account with that email exists, an OTP has been sent." 
       });
     }
 
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
-    await storage.setResetToken(email, resetToken, resetTokenExpiry);
+    await storage.setResetOTP(email, otp, otpExpiry);
 
-    const frontendUrl = process.env.FRONTEND_URL;
-    const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
+    await sendPasswordResetEmail(email, account.nickname, otp);
 
-    await sendPasswordResetEmail(email, account.nickname, resetLink);
-
-    log(`Password reset requested for: ${email}`, "auth");
+    log(`Password reset OTP requested for: ${email}`, "auth");
     
     res.json({ 
       success: true, 
-      message: "If an account with that email exists, a password reset link has been sent to your email." 
+      message: "If an account with that email exists, a 6-digit OTP has been sent to your email." 
     });
   } catch (error) {
     log(`Forgot password error: ${error.message}`, "auth");
@@ -145,11 +142,15 @@ export async function forgotPassword(req, res) {
 
 export async function verifyResetToken(req, res) {
   try {
-    const { token } = req.params;
+    const { email, otp } = req.body;
     
-    const account = await storage.getAccountByResetToken(token);
+    if (!email || !otp) {
+      return res.status(400).json({ error: "Email and OTP are required" });
+    }
+
+    const account = await storage.getAccountByResetOTP(email, otp);
     if (!account) {
-      return res.status(400).json({ error: "Invalid or expired reset token" });
+      return res.status(400).json({ error: "Invalid or expired OTP" });
     }
 
     res.json({ valid: true, email: account.email });
@@ -161,17 +162,17 @@ export async function verifyResetToken(req, res) {
 
 export async function resetPassword(req, res) {
   try {
-    const { token, newPassword } = req.body;
+    const { email, otp, newPassword } = req.body;
     
-    if (!token || !newPassword) {
-      return res.status(400).json({ error: "Token and new password are required" });
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ error: "Email, OTP, and new password are required" });
     }
 
     if (newPassword.length < 6) {
       return res.status(400).json({ error: "Password must be at least 6 characters" });
     }
 
-    const account = await storage.getAccountByResetToken(token);
+    const account = await storage.getAccountByResetOTP(token);
     if (!account) {
       return res.status(400).json({ error: "Invalid or expired reset token" });
     }
@@ -179,7 +180,7 @@ export async function resetPassword(req, res) {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     
     await storage.updateAccount(account._id.toString(), { password: hashedPassword });
-    await storage.clearResetToken(account._id.toString());
+    await storage.clearResetOTP(account._id.toString());
 
     log(`Password reset completed for: ${account.email}`, "auth");
     

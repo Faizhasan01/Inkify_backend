@@ -36,12 +36,16 @@ const AccountSchema = new mongoose.Schema(
       type: String,
       default: "#3b82f6",
     },
-    resetToken: {
+    resetOTP: {
       type: String,
       default: null,
     },
-    resetTokenExpiry: {
+    resetOTPExpiry: {
       type: Date,
+      default: null,
+    },
+    resetEmail: {
+      type: String,
       default: null,
     },
   },
